@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>補助金・助成金 チャットボット</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Hiragino Sans', 'Yu Gothic', sans-serif;
+      background: #f0f4f8;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: #1a56db;
+      color: white;
+      padding: 16px 24px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    }
+
+    header h1 { font-size: 1.2rem; font-weight: 700; }
+    header p { font-size: 0.8rem; opacity: 0.85; margin-top: 2px; }
+
+    #chat-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      max-width: 800px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .message {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .message.user { flex-direction: row-reverse; }
+
+    .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+
+    .message.assistant .avatar { background: #1a56db; }
+    .message.user .avatar { background: #374151; }
+
+    .bubble {
+      max-width: 70%;
+      padding: 12px 16px;
+      border-radius: 12px;
+      line-height: 1.6;
+      font-size: 0.95rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .message.assistant .bubble {
+      background: white;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      border-top-left-radius: 2px;
+    }
+
+    .message.user .bubble {
+      background: #1a56db;
+      color: white;
+      border-top-right-radius: 2px;
+    }
+
+    .typing-indicator {
+      display: flex;
+      gap: 4px;
+      padding: 8px 4px;
+    }
+
+    .typing-indicator span {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #9ca3af;
+      animation: bounce 1.2s infinite;
+    }
+    .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes bounce {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-6px); }
+    }
+
+    #input-area {
+      background: white;
+      border-top: 1px solid #e5e7eb;
+      padding: 16px;
+    }
+
+    #input-form {
+      max-width: 800px;
+      margin: 0 auto;
+      display: flex;
+      gap: 10px;
+    }
+
+    #user-input {
+      flex: 1;
+      padding: 12px 16px;
+      border: 1.5px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      resize: none;
+      outline: none;
+      transition: border-color 0.2s;
+      height: 48px;
+      max-height: 140px;
+      overflow-y: auto;
+    }
+
+    #user-input:focus { border-color: #1a56db; }
+
+    #send-btn {
+      padding: 12px 20px;
+      background: #1a56db;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+
+    #send-btn:hover:not(:disabled) { background: #1447b2; }
+    #send-btn:disabled { background: #9ca3af; cursor: not-allowed; }
+
+    .welcome {
+      text-align: center;
+      padding: 40px 20px;
+      color: #6b7280;
+    }
+
+    .welcome h2 { font-size: 1.4rem; color: #374151; margin-bottom: 8px; }
+    .welcome p { font-size: 0.9rem; margin-bottom: 20px; }
+
+    .suggestions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    .suggestion-btn {
+      padding: 8px 14px;
+      background: white;
+      border: 1.5px solid #d1d5db;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      color: #374151;
+      transition: all 0.2s;
+    }
+
+    .suggestion-btn:hover {
+      border-color: #1a56db;
+      color: #1a56db;
+      background: #eff6ff;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>補助金・助成金 チャットボット</h1>
+    <p>資料をもとに補助金情報をお答えします</p>
+  </header>
+
+  <div id="chat-container">
+    <div class="welcome" id="welcome">
+      <h2>補助金・助成金について何でも聞いてください</h2>
+      <p>以下のような質問ができます：</p>
+      <div class="suggestions">
+        <button class="suggestion-btn" onclick="sendSuggestion(this.textContent)">IT導入補助金について教えて</button>
+        <button class="suggestion-btn" onclick="sendSuggestion(this.textContent)">中小企業が使える補助金は？</button>
+        <button class="suggestion-btn" onclick="sendSuggestion(this.textContent)">補助率が高い補助金を教えて</button>
+        <button class="suggestion-btn" onclick="sendSuggestion(this.textContent)">創業向けの助成金はある？</button>
+        <button class="suggestion-btn" onclick="sendSuggestion(this.textContent)">省エネ設備への補助金を知りたい</button>
+        <button class="suggestion-btn" onclick="sendSuggestion(this.textContent)">雇用に関する助成金を一覧で見たい</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="input-area">
+    <form id="input-form">
+      <textarea id="user-input" placeholder="補助金について質問してください..." rows="1"></textarea>
+      <button type="submit" id="send-btn">送信</button>
+    </form>
+  </div>
+
+  <script>
+    const chatContainer = document.getElementById('chat-container');
+    const form = document.getElementById('input-form');
+    const input = document.getElementById('user-input');
+    const sendBtn = document.getElementById('send-btn');
+    const welcome = document.getElementById('welcome');
+
+    const history = [];
+
+    function addMessage(role, content) {
+      const div = document.createElement('div');
+      div.className = `message ${role}`;
+      const avatar = role === 'assistant' ? '🤖' : '👤';
+      div.innerHTML = `
+        <div class="avatar">${avatar}</div>
+        <div class="bubble" id="bubble-${Date.now()}">${escapeHtml(content)}</div>
+      `;
+      chatContainer.appendChild(div);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+      return div.querySelector('.bubble');
+    }
+
+    function addTypingIndicator() {
+      const div = document.createElement('div');
+      div.className = 'message assistant';
+      div.id = 'typing';
+      div.innerHTML = `
+        <div class="avatar">🤖</div>
+        <div class="bubble">
+          <div class="typing-indicator">
+            <span></span><span></span><span></span>
+          </div>
+        </div>
+      `;
+      chatContainer.appendChild(div);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    function removeTypingIndicator() {
+      const el = document.getElementById('typing');
+      if (el) el.remove();
+    }
+
+    function escapeHtml(text) {
+      return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    async function sendMessage(text) {
+      if (!text.trim()) return;
+
+      if (welcome) welcome.style.display = 'none';
+
+      addMessage('user', text);
+      history.push({ role: 'user', content: text });
+
+      sendBtn.disabled = true;
+      addTypingIndicator();
+
+      let assistantBubble = null;
+      let fullText = '';
+
+      try {
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ history }),
+        });
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split('\n');
+
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue;
+            const data = line.slice(6);
+            if (data === '[DONE]') break;
+
+            try {
+              const { text: token } = JSON.parse(data);
+              if (!assistantBubble) {
+                removeTypingIndicator();
+                assistantBubble = addMessage('assistant', '');
+              }
+              fullText += token;
+              assistantBubble.textContent = fullText;
+              chatContainer.scrollTop = chatContainer.scrollHeight;
+            } catch {}
+          }
+        }
+
+        if (fullText) {
+          history.push({ role: 'assistant', content: fullText });
+        }
+      } catch (err) {
+        removeTypingIndicator();
+        addMessage('assistant', 'エラーが発生しました。もう一度お試しください。');
+        console.error(err);
+      } finally {
+        sendBtn.disabled = false;
+        input.focus();
+      }
+    }
+
+    function sendSuggestion(text) {
+      input.value = text;
+      sendMessage(text);
+      input.value = '';
+    }
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const text = input.value.trim();
+      if (!text) return;
+      input.value = '';
+      input.style.height = '48px';
+      sendMessage(text);
+    });
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        form.dispatchEvent(new Event('submit'));
+      }
+    });
+
+    input.addEventListener('input', () => {
+      input.style.height = '48px';
+      input.style.height = Math.min(input.scrollHeight, 140) + 'px';
+    });
+  </script>
+</body>
+</html>
