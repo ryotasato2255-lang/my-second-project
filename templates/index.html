@@ -3,349 +3,556 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>補助金・助成金 チャットボット</title>
+  <title>ポケモン占い ✨</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: 'Hiragino Sans', 'Yu Gothic', sans-serif;
-      background: #f0f4f8;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
+      font-family: 'Hiragino Sans', 'Yu Gothic', 'Meiryo', sans-serif;
+      background: #0d0d2b;
+      min-height: 100vh;
+      color: #e8e0ff;
+      overflow-x: hidden;
+    }
+
+    /* 星空背景 */
+    #stars {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .star {
+      position: absolute;
+      background: white;
+      border-radius: 50%;
+      animation: twinkle var(--dur, 3s) infinite alternate;
+    }
+
+    @keyframes twinkle {
+      0% { opacity: 0.2; transform: scale(1); }
+      100% { opacity: 1; transform: scale(1.3); }
+    }
+
+    /* メインコンテンツ */
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 40px 20px 60px;
     }
 
     header {
-      background: #1a56db;
-      color: white;
-      padding: 16px 24px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
-    }
-
-    header h1 { font-size: 1.2rem; font-weight: 700; }
-    header p { font-size: 0.8rem; opacity: 0.85; margin-top: 2px; }
-
-    #chat-container {
-      flex: 1;
-      overflow-y: auto;
-      padding: 24px 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      max-width: 800px;
-      width: 100%;
-      margin: 0 auto;
-    }
-
-    .message {
-      display: flex;
-      gap: 12px;
-      align-items: flex-start;
-    }
-
-    .message.user { flex-direction: row-reverse; }
-
-    .avatar {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.1rem;
-      flex-shrink: 0;
-    }
-
-    .message.assistant .avatar { background: #1a56db; }
-    .message.user .avatar { background: #374151; }
-
-    .bubble {
-      max-width: 70%;
-      padding: 12px 16px;
-      border-radius: 12px;
-      line-height: 1.6;
-      font-size: 0.95rem;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-
-    .message.assistant .bubble {
-      background: white;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-      border-top-left-radius: 2px;
-    }
-
-    .message.user .bubble {
-      background: #1a56db;
-      color: white;
-      border-top-right-radius: 2px;
-    }
-
-    .typing-indicator {
-      display: flex;
-      gap: 4px;
-      padding: 8px 4px;
-    }
-
-    .typing-indicator span {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      background: #9ca3af;
-      animation: bounce 1.2s infinite;
-    }
-    .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
-    .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
-
-    @keyframes bounce {
-      0%, 60%, 100% { transform: translateY(0); }
-      30% { transform: translateY(-6px); }
-    }
-
-    #input-area {
-      background: white;
-      border-top: 1px solid #e5e7eb;
-      padding: 16px;
-    }
-
-    #input-form {
-      max-width: 800px;
-      margin: 0 auto;
-      display: flex;
-      gap: 10px;
-    }
-
-    #user-input {
-      flex: 1;
-      padding: 12px 16px;
-      border: 1.5px solid #d1d5db;
-      border-radius: 8px;
-      font-size: 0.95rem;
-      font-family: inherit;
-      resize: none;
-      outline: none;
-      transition: border-color 0.2s;
-      height: 48px;
-      max-height: 140px;
-      overflow-y: auto;
-    }
-
-    #user-input:focus { border-color: #1a56db; }
-
-    #send-btn {
-      padding: 12px 20px;
-      background: #1a56db;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 1rem;
-      transition: background 0.2s;
-      white-space: nowrap;
-    }
-
-    #send-btn:hover:not(:disabled) { background: #1447b2; }
-    #send-btn:disabled { background: #9ca3af; cursor: not-allowed; }
-
-    .welcome {
       text-align: center;
-      padding: 40px 20px;
-      color: #6b7280;
+      margin-bottom: 40px;
     }
 
-    .welcome h2 { font-size: 1.4rem; color: #374151; margin-bottom: 8px; }
-    .welcome p { font-size: 0.9rem; margin-bottom: 20px; }
+    header h1 {
+      font-size: 2.4rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, #ffd700, #ff69b4, #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: none;
+      margin-bottom: 8px;
+      letter-spacing: 0.05em;
+    }
 
-    .suggestions {
+    header p {
+      color: #a78bfa;
+      font-size: 0.95rem;
+      letter-spacing: 0.1em;
+    }
+
+    /* 入力カード */
+    .card {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(167, 139, 250, 0.3);
+      border-radius: 20px;
+      padding: 32px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1);
+    }
+
+    .input-group {
+      margin-bottom: 20px;
+    }
+
+    .input-group label {
+      display: block;
+      font-size: 0.85rem;
+      color: #a78bfa;
+      margin-bottom: 8px;
+      letter-spacing: 0.1em;
+    }
+
+    .input-group input {
+      width: 100%;
+      padding: 14px 18px;
+      background: rgba(255,255,255,0.08);
+      border: 1.5px solid rgba(167,139,250,0.4);
+      border-radius: 12px;
+      color: #e8e0ff;
+      font-size: 1rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .input-group input::placeholder { color: rgba(168,162,218,0.5); }
+    .input-group input:focus {
+      border-color: #a78bfa;
+      background: rgba(255,255,255,0.12);
+    }
+
+    .fortune-btn {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #7c3aed, #a855f7, #ec4899);
+      border: none;
+      border-radius: 14px;
+      color: white;
+      font-size: 1.1rem;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+      letter-spacing: 0.08em;
+      box-shadow: 0 4px 20px rgba(168,85,247,0.4);
+    }
+
+    .fortune-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(168,85,247,0.6);
+    }
+
+    .fortune-btn:active:not(:disabled) { transform: translateY(0); }
+    .fortune-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    /* ローディング */
+    #loading {
+      display: none;
+      text-align: center;
+      padding: 40px 0;
+    }
+
+    .pokeball {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 20px;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+      color: #a78bfa;
+      font-size: 0.9rem;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 1; }
+    }
+
+    /* 結果エリア */
+    #result {
+      display: none;
+      margin-top: 32px;
+    }
+
+    .pokemon-card {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(167,139,250,0.3);
+      border-radius: 20px;
+      padding: 28px;
+      text-align: center;
+      margin-bottom: 24px;
+      backdrop-filter: blur(12px);
+      animation: fadeInUp 0.6s ease-out;
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .pokemon-label {
+      font-size: 0.8rem;
+      color: #a78bfa;
+      letter-spacing: 0.15em;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+    }
+
+    .pokemon-img {
+      width: 180px;
+      height: 180px;
+      object-fit: contain;
+      filter: drop-shadow(0 0 20px rgba(167,139,250,0.6));
+      animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .pokemon-name {
+      font-size: 2rem;
+      font-weight: 900;
+      color: #ffd700;
+      margin: 12px 0 6px;
+      text-shadow: 0 0 20px rgba(255,215,0,0.4);
+    }
+
+    .pokemon-name-en {
+      font-size: 0.85rem;
+      color: rgba(168,162,218,0.7);
+      text-transform: capitalize;
+      margin-bottom: 14px;
+    }
+
+    .type-badges {
       display: flex;
-      flex-wrap: wrap;
       gap: 8px;
       justify-content: center;
+      flex-wrap: wrap;
     }
 
-    .suggestion-btn {
-      padding: 8px 14px;
-      background: white;
-      border: 1.5px solid #d1d5db;
+    .type-badge {
+      padding: 4px 14px;
       border-radius: 20px;
-      cursor: pointer;
-      font-size: 0.85rem;
-      color: #374151;
-      transition: all 0.2s;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
     }
 
-    .suggestion-btn:hover {
-      border-color: #1a56db;
-      color: #1a56db;
-      background: #eff6ff;
+    /* タイプ別カラー */
+    .type-fire { background: rgba(255,100,0,0.3); border: 1px solid #ff6400; color: #ff9a6c; }
+    .type-water { background: rgba(0,100,255,0.3); border: 1px solid #0064ff; color: #6ca8ff; }
+    .type-grass { background: rgba(0,180,0,0.3); border: 1px solid #00b400; color: #6cd96c; }
+    .type-electric { background: rgba(255,200,0,0.3); border: 1px solid #ffc800; color: #ffe066; }
+    .type-psychic { background: rgba(255,0,128,0.3); border: 1px solid #ff0080; color: #ff80bf; }
+    .type-normal { background: rgba(168,168,120,0.3); border: 1px solid #a8a878; color: #c8c8a0; }
+    .type-fighting { background: rgba(192,48,40,0.3); border: 1px solid #c03028; color: #e07870; }
+    .type-flying { background: rgba(168,144,240,0.3); border: 1px solid #a890f0; color: #c8b8f8; }
+    .type-poison { background: rgba(160,0,160,0.3); border: 1px solid #a000a0; color: #e070e0; }
+    .type-ground { background: rgba(224,192,104,0.3); border: 1px solid #e0c068; color: #edd890; }
+    .type-rock { background: rgba(184,160,56,0.3); border: 1px solid #b8a038; color: #d0b850; }
+    .type-bug { background: rgba(168,184,32,0.3); border: 1px solid #a8b820; color: #c8d460; }
+    .type-ghost { background: rgba(112,88,152,0.3); border: 1px solid #705898; color: #9878c8; }
+    .type-steel { background: rgba(184,184,208,0.3); border: 1px solid #b8b8d0; color: #d0d0e8; }
+    .type-dragon { background: rgba(112,56,248,0.3); border: 1px solid #7038f8; color: #9070f8; }
+    .type-dark { background: rgba(112,88,72,0.3); border: 1px solid #705848; color: #a08868; }
+    .type-fairy { background: rgba(238,153,172,0.3); border: 1px solid #ee99ac; color: #f4bbc8; }
+    .type-ice { background: rgba(152,216,216,0.3); border: 1px solid #98d8d8; color: #b8e8e8; }
+
+    /* 占い結果 */
+    .fortune-card {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(167,139,250,0.3);
+      border-radius: 20px;
+      padding: 28px;
+      backdrop-filter: blur(12px);
+      animation: fadeInUp 0.6s ease-out 0.2s both;
+    }
+
+    .fortune-title {
+      font-size: 1rem;
+      color: #ffd700;
+      letter-spacing: 0.15em;
+      margin-bottom: 20px;
+      text-align: center;
+      text-shadow: 0 0 15px rgba(255,215,0,0.4);
+    }
+
+    #fortune-text {
+      line-height: 1.9;
+      font-size: 0.95rem;
+      color: #e8e0ff;
+      white-space: pre-wrap;
+      min-height: 60px;
+    }
+
+    .cursor {
+      display: inline-block;
+      width: 2px;
+      height: 1em;
+      background: #a78bfa;
+      margin-left: 2px;
+      vertical-align: text-bottom;
+      animation: blink 0.8s step-end infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    /* もう一度ボタン */
+    .retry-btn {
+      display: block;
+      margin: 24px auto 0;
+      padding: 12px 32px;
+      background: transparent;
+      border: 1.5px solid rgba(167,139,250,0.6);
+      border-radius: 30px;
+      color: #a78bfa;
+      font-size: 0.9rem;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 0.08em;
+    }
+
+    .retry-btn:hover {
+      background: rgba(167,139,250,0.15);
+      border-color: #a78bfa;
+    }
+
+    /* レスポンシブ */
+    @media (max-width: 480px) {
+      header h1 { font-size: 1.8rem; }
+      .card, .pokemon-card, .fortune-card { padding: 20px; }
+      .pokemon-img { width: 140px; height: 140px; }
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>補助金・助成金 チャットボット</h1>
-    <p>資料をもとに補助金情報をお答えします</p>
-  </header>
+  <!-- 星空 -->
+  <div id="stars"></div>
 
-  <div id="chat-container">
-    <div class="welcome" id="welcome">
-      <h2>補助金・助成金について何でも聞いてください</h2>
-      <p>以下のような質問ができます：</p>
-      <div class="suggestions">
-        <button class="suggestion-btn" onclick="sendSuggestion(this.textContent)">IT導入補助金について教えて</button>
-        <button class="suggestion-btn" onclick="sendSuggestion(this.textContent)">中小企業が使える補助金は？</button>
-        <button class="suggestion-btn" onclick="sendSuggestion(this.textContent)">補助率が高い補助金を教えて</button>
-        <button class="suggestion-btn" onclick="sendSuggestion(this.textContent)">創業向けの助成金はある？</button>
-        <button class="suggestion-btn" onclick="sendSuggestion(this.textContent)">省エネ設備への補助金を知りたい</button>
-        <button class="suggestion-btn" onclick="sendSuggestion(this.textContent)">雇用に関する助成金を一覧で見たい</button>
+  <div class="container">
+    <header>
+      <h1>✨ ポケモン占い ✨</h1>
+      <p>〜 今日の守護ポケモンがあなたの運勢を導く 〜</p>
+    </header>
+
+    <!-- 入力フォーム -->
+    <div class="card" id="form-card">
+      <div class="input-group">
+        <label>あなたのお名前</label>
+        <input type="text" id="name-input" placeholder="例: サトシ" maxlength="30" />
       </div>
+      <button class="fortune-btn" id="fortune-btn" onclick="startFortune()">
+        🔮 今日の運勢を占う
+      </button>
+    </div>
+
+    <!-- ローディング -->
+    <div id="loading">
+      <svg class="pokeball" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="50" cy="50" r="48" fill="none" stroke="rgba(167,139,250,0.3)" stroke-width="2"/>
+        <path d="M2,50 A48,48 0 0,1 98,50" fill="#ec4899" opacity="0.8"/>
+        <path d="M2,50 A48,48 0 0,0 98,50" fill="#1a1a3e" opacity="0.8"/>
+        <rect x="2" y="47" width="96" height="6" fill="rgba(167,139,250,0.8)"/>
+        <circle cx="50" cy="50" r="14" fill="rgba(167,139,250,0.3)" stroke="rgba(167,139,250,0.8)" stroke-width="2"/>
+        <circle cx="50" cy="50" r="8" fill="#1a1a3e" stroke="rgba(167,139,250,0.6)" stroke-width="2"/>
+      </svg>
+      <p class="loading-text" id="loading-text">守護ポケモンを召喚中...</p>
+    </div>
+
+    <!-- 結果 -->
+    <div id="result">
+      <div class="pokemon-card">
+        <p class="pokemon-label">✦ 今日の守護ポケモン ✦</p>
+        <img id="pokemon-img" class="pokemon-img" src="" alt="ポケモン" />
+        <p class="pokemon-name" id="pokemon-name"></p>
+        <p class="pokemon-name-en" id="pokemon-name-en"></p>
+        <div class="type-badges" id="type-badges"></div>
+      </div>
+
+      <div class="fortune-card">
+        <p class="fortune-title">⭐ 今日の運勢 ⭐</p>
+        <div id="fortune-text"></div>
+      </div>
+
+      <button class="retry-btn" onclick="reset()">🔄 もう一度占う</button>
     </div>
   </div>
 
-  <div id="input-area">
-    <form id="input-form">
-      <textarea id="user-input" placeholder="補助金について質問してください..." rows="1"></textarea>
-      <button type="submit" id="send-btn">送信</button>
-    </form>
-  </div>
-
   <script>
-    const chatContainer = document.getElementById('chat-container');
-    const form = document.getElementById('input-form');
-    const input = document.getElementById('user-input');
-    const sendBtn = document.getElementById('send-btn');
-    const welcome = document.getElementById('welcome');
+    // 星空を生成
+    (function createStars() {
+      const container = document.getElementById('stars');
+      for (let i = 0; i < 120; i++) {
+        const s = document.createElement('div');
+        s.className = 'star';
+        const size = Math.random() * 2.5 + 0.5;
+        s.style.cssText = `
+          width:${size}px; height:${size}px;
+          top:${Math.random()*100}%;
+          left:${Math.random()*100}%;
+          --dur:${(Math.random()*3+2).toFixed(1)}s;
+          animation-delay:${(Math.random()*4).toFixed(1)}s;
+        `;
+        container.appendChild(s);
+      }
+    })();
 
-    const history = [];
-
-    function addMessage(role, content) {
-      const div = document.createElement('div');
-      div.className = `message ${role}`;
-      const avatar = role === 'assistant' ? '🤖' : '👤';
-      div.innerHTML = `
-        <div class="avatar">${avatar}</div>
-        <div class="bubble" id="bubble-${Date.now()}">${escapeHtml(content)}</div>
-      `;
-      chatContainer.appendChild(div);
-      chatContainer.scrollTop = chatContainer.scrollHeight;
-      return div.querySelector('.bubble');
+    // 名前からポケモンIDを決定（当日固定）
+    function getPokemonId(name) {
+      const today = new Date().toISOString().split('T')[0];
+      const str = name.trim() + today;
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = Math.imul(31, hash) + str.charCodeAt(i) | 0;
+      }
+      return (Math.abs(hash) % 898) + 1; // 1〜898
     }
 
-    function addTypingIndicator() {
-      const div = document.createElement('div');
-      div.className = 'message assistant';
-      div.id = 'typing';
-      div.innerHTML = `
-        <div class="avatar">🤖</div>
-        <div class="bubble">
-          <div class="typing-indicator">
-            <span></span><span></span><span></span>
-          </div>
-        </div>
-      `;
-      chatContainer.appendChild(div);
-      chatContainer.scrollTop = chatContainer.scrollHeight;
+    // タイプの日本語マッピング
+    const typeJa = {
+      normal:'ノーマル', fire:'ほのお', water:'みず', electric:'でんき',
+      grass:'くさ', ice:'こおり', fighting:'かくとう', poison:'どく',
+      ground:'じめん', flying:'ひこう', psychic:'エスパー', bug:'むし',
+      rock:'いわ', ghost:'ゴースト', dragon:'ドラゴン', dark:'あく',
+      steel:'はがね', fairy:'フェアリー'
+    };
+
+    async function fetchPokemon(id) {
+      const [pRes, sRes] = await Promise.all([
+        fetch(`https://pokeapi.co/api/v2/pokemon/${id}`),
+        fetch(`https://pokeapi.co/api/v2/pokemon-species/${id}`)
+      ]);
+      const p = await pRes.json();
+      const s = await sRes.json();
+
+      // 日本語名
+      const jaName = s.names.find(n => n.language.name === 'ja-Hrkt') ||
+                     s.names.find(n => n.language.name === 'ja') ||
+                     { name: p.name };
+
+      // タイプ
+      const types = p.types.map(t => t.type.name);
+
+      // 特性（日本語取得は省略してローマ字）
+      const abilities = p.abilities
+        .filter(a => !a.is_hidden)
+        .map(a => a.ability.name.replace(/-/g, ' '));
+
+      // 能力値
+      const statNameJa = {
+        hp:'HP', attack:'こうげき', defense:'ぼうぎょ',
+        'special-attack':'とくこう', 'special-defense':'とくぼう', speed:'すばやさ'
+      };
+      const stats = {};
+      p.stats.forEach(st => {
+        const key = statNameJa[st.stat.name] || st.stat.name;
+        stats[key] = st.base_stat;
+      });
+
+      // 画像
+      const img = p.sprites.other?.['official-artwork']?.front_default
+                || p.sprites.front_default;
+
+      return {
+        id,
+        name: p.name,
+        name_ja: jaName.name,
+        types,
+        abilities,
+        stats,
+        img
+      };
     }
 
-    function removeTypingIndicator() {
-      const el = document.getElementById('typing');
-      if (el) el.remove();
-    }
+    async function startFortune() {
+      const nameInput = document.getElementById('name-input');
+      const name = nameInput.value.trim() || 'あなた';
 
-    function escapeHtml(text) {
-      return text
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    }
+      document.getElementById('form-card').style.display = 'none';
+      document.getElementById('result').style.display = 'none';
+      document.getElementById('loading').style.display = 'block';
+      document.getElementById('loading-text').textContent = '守護ポケモンを召喚中...';
 
-    async function sendMessage(text) {
-      if (!text.trim()) return;
+      let pokemon;
+      try {
+        const id = getPokemonId(name);
+        pokemon = await fetchPokemon(id);
+      } catch (e) {
+        console.error(e);
+        document.getElementById('loading-text').textContent = 'ポケモンの召喚に失敗しました。もう一度お試しください。';
+        setTimeout(reset, 2500);
+        return;
+      }
 
-      if (welcome) welcome.style.display = 'none';
+      // ポケモン情報を表示
+      document.getElementById('pokemon-img').src = pokemon.img || '';
+      document.getElementById('pokemon-name').textContent = pokemon.name_ja;
+      document.getElementById('pokemon-name-en').textContent = pokemon.name;
 
-      addMessage('user', text);
-      history.push({ role: 'user', content: text });
+      const badges = document.getElementById('type-badges');
+      badges.innerHTML = '';
+      pokemon.types.forEach(t => {
+        const span = document.createElement('span');
+        span.className = `type-badge type-${t}`;
+        span.textContent = typeJa[t] || t;
+        badges.appendChild(span);
+      });
 
-      sendBtn.disabled = true;
-      addTypingIndicator();
+      document.getElementById('loading-text').textContent = '運勢を読み取り中...';
 
-      let assistantBubble = null;
-      let fullText = '';
+      // 占いAPIを呼び出し
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('result').style.display = 'block';
+
+      const fortuneText = document.getElementById('fortune-text');
+      fortuneText.innerHTML = '<span class="cursor"></span>';
+      let text = '';
 
       try {
-        const response = await fetch('/api/chat', {
+        const res = await fetch('/api/fortune', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ history }),
+          body: JSON.stringify({ name, pokemon })
         });
 
-        const reader = response.body.getReader();
+        const reader = res.body.getReader();
         const decoder = new TextDecoder();
 
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-
           const chunk = decoder.decode(value, { stream: true });
-          const lines = chunk.split('\n');
-
-          for (const line of lines) {
+          for (const line of chunk.split('\n')) {
             if (!line.startsWith('data: ')) continue;
             const data = line.slice(6);
             if (data === '[DONE]') break;
-
             try {
               const { text: token } = JSON.parse(data);
-              if (!assistantBubble) {
-                removeTypingIndicator();
-                assistantBubble = addMessage('assistant', '');
-              }
-              fullText += token;
-              assistantBubble.textContent = fullText;
-              chatContainer.scrollTop = chatContainer.scrollHeight;
+              text += token;
+              fortuneText.innerHTML = text.replace(/\n/g, '<br>') + '<span class="cursor"></span>';
+              window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
             } catch {}
           }
         }
-
-        if (fullText) {
-          history.push({ role: 'assistant', content: fullText });
-        }
-      } catch (err) {
-        removeTypingIndicator();
-        addMessage('assistant', 'エラーが発生しました。もう一度お試しください。');
-        console.error(err);
-      } finally {
-        sendBtn.disabled = false;
-        input.focus();
+        // カーソルを消す
+        fortuneText.innerHTML = text.replace(/\n/g, '<br>');
+      } catch (e) {
+        fortuneText.textContent = '占いの読み取り中にエラーが発生しました。';
+        console.error(e);
       }
     }
 
-    function sendSuggestion(text) {
-      input.value = text;
-      sendMessage(text);
-      input.value = '';
+    function reset() {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('result').style.display = 'none';
+      document.getElementById('form-card').style.display = 'block';
+      document.getElementById('name-input').focus();
     }
 
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const text = input.value.trim();
-      if (!text) return;
-      input.value = '';
-      input.style.height = '48px';
-      sendMessage(text);
-    });
-
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        form.dispatchEvent(new Event('submit'));
-      }
-    });
-
-    input.addEventListener('input', () => {
-      input.style.height = '48px';
-      input.style.height = Math.min(input.scrollHeight, 140) + 'px';
+    // Enterキー対応
+    document.getElementById('name-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') startFortune();
     });
   </script>
 </body>

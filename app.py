@@ -1,9 +1,7 @@
 import os
 import json
-from pathlib import Path
 from flask import Flask, render_template, request, Response, stream_with_context
 import anthropic
-from pypdf import PdfReader
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -11,35 +9,16 @@ load_dotenv()
 app = Flask(__name__)
 client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
 
-DATA_DIR = Path(__file__).parent / "data"
+FORTUNE_SYSTEM_PROMPT = """あなたはポケモン占い師「ミスティック・ポケドラ」です。
+ユーザーに割り当てられたポケモンの特性をもとに、その人の今日の運勢を神秘的に占います。
 
-
-def load_documents() -> str:
-    """Load all text and PDF files from the data directory."""
-    contents = []
-
-    for path in sorted(DATA_DIR.iterdir()):
-        if path.suffix == ".txt":
-            text = path.read_text(encoding="utf-8")
-            contents.append(f"=== ファイル: {path.name} ===\n{text}")
-        elif path.suffix == ".pdf":
-            reader = PdfReader(str(path))
-            pages = [page.extract_text() or "" for page in reader.pages]
-            text = "\n".join(pages)
-            contents.append(f"=== ファイル: {path.name} ===\n{text}")
-
-    return "\n\n".join(contents)
-
-
-SYSTEM_PROMPT = """あなたは補助金・助成金の専門アドバイザーです。
-提供された資料をもとに、ユーザーの質問に日本語で丁寧に回答してください。
-
-回答のガイドライン:
-- 資料に記載された情報のみを使用し、不明な点は「資料には記載がありません」と伝えてください
-- 補助金名、対象者、補助率、補助額、申請期間などを明確に示してください
-- 複数の補助金が該当する場合は、それぞれを整理して説明してください
-- 最新情報は公式サイトで確認するよう促してください
-- 親切で分かりやすい説明を心がけてください"""
+占いのガイドライン:
+- ポケモンのタイプ・特性・能力値の特徴を今日の運勢に結びつけてください
+- 「✨ 総合運」「💖 恋愛運」「💼 仕事運」「🍀 ラッキーアイテム」を必ず含めてください
+- 神秘的で詩的な言葉を使い、ポケモンらしいエッセンスを出してください
+- 全体的にポジティブで希望が持てる内容にしてください
+- 絵文字を適度に使って楽しい雰囲気を演出してください
+- 各項目は改行で区切り、読みやすくしてください"""
 
 
 @app.route("/")
@@ -47,25 +26,33 @@ def index():
     return render_template("index.html")
 
 
-@app.route("/api/chat", methods=["POST"])
-def chat():
+@app.route("/api/fortune", methods=["POST"])
+def fortune():
     data = request.get_json()
-    history = data.get("history", [])
+    user_name = data.get("name", "あなた")
+    pokemon = data.get("pokemon", {})
 
-    documents = load_documents()
-    system_with_docs = f"{SYSTEM_PROMPT}\n\n以下が補助金情報の資料です:\n\n{documents}"
+    pokemon_name_ja = pokemon.get("name_ja", pokemon.get("name", "ポケモン"))
+    pokemon_name_en = pokemon.get("name", "pokemon")
+    pokemon_types = "・".join(pokemon.get("types", []))
+    pokemon_abilities = "・".join(pokemon.get("abilities", []))
+    stats = pokemon.get("stats", {})
+    stats_text = "、".join([f"{k} {v}" for k, v in stats.items()])
 
-    messages = [
-        {"role": msg["role"], "content": msg["content"]}
-        for msg in history
-    ]
+    user_message = f"""占い対象者: {user_name}さん
+本日の守護ポケモン: {pokemon_name_ja}（{pokemon_name_en}）
+タイプ: {pokemon_types}
+特性: {pokemon_abilities}
+能力値: {stats_text}
+
+{user_name}さんの今日の運勢を占ってください。"""
 
     def generate():
         with client.messages.stream(
             model="claude-opus-4-6",
-            max_tokens=2048,
-            system=system_with_docs,
-            messages=messages,
+            max_tokens=1024,
+            system=FORTUNE_SYSTEM_PROMPT,
+            messages=[{"role": "user", "content": user_message}],
         ) as stream:
             for text in stream.text_stream:
                 yield f"data: {json.dumps({'text': text})}\n\n"
@@ -82,6 +69,4 @@ def chat():
 
 
 if __name__ == "__main__":
-    print(f"データフォルダ: {DATA_DIR}")
-    print(f"読み込みファイル数: {len(list(DATA_DIR.iterdir()))}")
     app.run(debug=True, port=5000)
