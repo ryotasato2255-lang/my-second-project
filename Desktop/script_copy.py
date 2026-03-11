@@ -1,0 +1,2 @@
+# scriptのコピー
+print("hello world")
