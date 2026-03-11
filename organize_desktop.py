@@ -5,6 +5,7 @@
 """
 
 import os
+import sys
 import shutil
 import argparse
 from pathlib import Path
@@ -189,27 +190,44 @@ def organize(desktop: Path, dry_run: bool = False) -> None:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="デスクトップを整理するスクリプト")
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="実際には移動せず、何が移動されるかだけ確認する",
-    )
-    parser.add_argument(
-        "--desktop",
-        type=str,
-        help="デスクトップのパスを手動で指定（省略時は自動検出）",
-    )
-    args = parser.parse_args()
+    # Jupyterノートブック環境かどうかを検出
+    in_jupyter = "ipykernel" in sys.modules
 
-    try:
-        desktop = Path(args.desktop) if args.desktop else get_desktop_path()
-    except FileNotFoundError as e:
-        print(f"エラー: {e}")
-        return
+    if in_jupyter:
+        # Jupyter内では引数を直接変数で指定
+        DRY_RUN = False   # Trueにすると確認のみ（移動しない）
+        DESKTOP_PATH = None  # Noneで自動検出、例: "C:/Users/yourname/Desktop"
 
-    print(f"デスクトップ: {desktop}")
-    organize(desktop, dry_run=args.dry_run)
+        try:
+            desktop = Path(DESKTOP_PATH) if DESKTOP_PATH else get_desktop_path()
+        except FileNotFoundError as e:
+            print(f"エラー: {e}")
+            return
+
+        print(f"デスクトップ: {desktop}")
+        organize(desktop, dry_run=DRY_RUN)
+    else:
+        parser = argparse.ArgumentParser(description="デスクトップを整理するスクリプト")
+        parser.add_argument(
+            "--dry-run",
+            action="store_true",
+            help="実際には移動せず、何が移動されるかだけ確認する",
+        )
+        parser.add_argument(
+            "--desktop",
+            type=str,
+            help="デスクトップのパスを手動で指定（省略時は自動検出）",
+        )
+        args = parser.parse_args()
+
+        try:
+            desktop = Path(args.desktop) if args.desktop else get_desktop_path()
+        except FileNotFoundError as e:
+            print(f"エラー: {e}")
+            return
+
+        print(f"デスクトップ: {desktop}")
+        organize(desktop, dry_run=args.dry_run)
 
 
 if __name__ == "__main__":
