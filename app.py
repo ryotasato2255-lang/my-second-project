@@ -3,15 +3,13 @@ import json
 from pathlib import Path
 from flask import Flask, render_template, request, Response, stream_with_context
 import anthropic
-from openai import OpenAI
 from pypdf import PdfReader
 from dotenv import load_dotenv
 
 load_dotenv()
 
 app = Flask(__name__)
-anthropic_client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
-openai_client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
 
 DATA_DIR = Path(__file__).parent / "data"
 
@@ -53,7 +51,6 @@ def index():
 def chat():
     data = request.get_json()
     history = data.get("history", [])
-    provider = data.get("provider", "claude")
 
     documents = load_documents()
     system_with_docs = f"{SYSTEM_PROMPT}\n\n以下が補助金情報の資料です:\n\n{documents}"
@@ -63,30 +60,16 @@ def chat():
         for msg in history
     ]
 
-    if provider == "chatgpt":
-        def generate():
-            stream = openai_client.chat.completions.create(
-                model="gpt-4o",
-                max_tokens=2048,
-                messages=[{"role": "system", "content": system_with_docs}] + messages,
-                stream=True,
-            )
-            for chunk in stream:
-                delta = chunk.choices[0].delta
-                if delta.content:
-                    yield f"data: {json.dumps({'text': delta.content})}\n\n"
-            yield "data: [DONE]\n\n"
-    else:
-        def generate():
-            with anthropic_client.messages.stream(
-                model="claude-opus-4-6",
-                max_tokens=2048,
-                system=system_with_docs,
-                messages=messages,
-            ) as stream:
-                for text in stream.text_stream:
-                    yield f"data: {json.dumps({'text': text})}\n\n"
-            yield "data: [DONE]\n\n"
+    def generate():
+        with client.messages.stream(
+            model="claude-opus-4-6",
+            max_tokens=2048,
+            system=system_with_docs,
+            messages=messages,
+        ) as stream:
+            for text in stream.text_stream:
+                yield f"data: {json.dumps({'text': text})}\n\n"
+        yield "data: [DONE]\n\n"
 
     return Response(
         stream_with_context(generate()),
